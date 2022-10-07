@@ -18,3 +18,11 @@ def configure_routes(app):
         background_task(task)
         return {"id": key}
 
+    @app.get('/highlights/<task_id>')
+    def get_highlights(task_id):
+        print(f'{task_id}')
+        highlight_dict = {
+            "id": task_id,
+            "highlight": "This is a test"
+        }
+        return highlight_dict
