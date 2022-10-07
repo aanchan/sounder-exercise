@@ -1,0 +1,58 @@
+{
+   "transcriber": "inhouse",
+   "created": "2021/12/08 22:25:10",
+   "results": {
+       "transcripts": [
+           {
+               "transcript": "This is a test",
+               "confidence": "0.95"
+           }
+       ],
+       "items": [
+           {
+               "start_time": 0.4,
+               "end_time": 0.48,
+               "alternatives": [
+                   {
+                    "confidence": "1.0",
+                    "content": "This"
+                   }
+               ],
+               "type": "pronunciation"
+           },
+           {
+               "start_time": 0.48,
+               "end_time": 0.56,
+               "alternatives": [
+                   {
+                       "confidence": "1.0",
+                       "content": "is"
+                   }
+               ],
+               "type": "pronunciation"
+           },
+           {
+               "start_time": 0.72,
+               "end_time": 0.96,
+               "alternatives": [
+                   {
+                       "confidence": "1.0",
+                       "content": "a"
+                   }
+               ],
+               "type": "pronunciation"
+           },
+           {
+               "start_time": 1.04,
+               "end_time": 1.12,
+               "alternatives": [
+                   {
+                       "confidence": "1.0",
+                       "content": "test"
+                   }
+               ],
+               "type": "pronunciation"
+           }
+       ]
+   }
+}
