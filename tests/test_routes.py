@@ -28,8 +28,7 @@ def test_base_route(test_client):
 
 
 @pytest.fixture
-def input_data():
-    file_name='input_text_data.json'
+def input_data(file_name='input_text_data.json'):
     with open(file_name) as f:
         data = json.load(f)
         yield data
