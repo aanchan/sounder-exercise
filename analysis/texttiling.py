@@ -1,22 +1,8 @@
 import torch
 import numpy as np
-from .constants import (
-    TopicSegmentationAlgorithm,
-    TopicSegmentationConfig,
-    TextTilingHyperparameters,
-)
+from sentence_transformers import SentenceTransformer
 
-
-# pretrained roberta model
-roberta_model = torch.hub.load('pytorch/fairseq', 'roberta.large')
-roberta_model.eval()
-
-PARALLEL_INFERENCE_INSTANCES = 20
-SENTENCE_COMPARISON_WINDOW = 15
-SMOOTHING_PASSES = 2
-SMOOTHING_WINDOW = 1
-TOPIC_CHANGE_THRESHOLD = 0.6
-
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
 
 def depth_score(timeseries):
@@ -106,115 +92,62 @@ def get_local_maxima(array):
     return local_maxima_indices, local_maxima_values
 
 
-def get_features_from_sentence(batch_sentences, layer=-2):
-    """
-    extracts the BERT semantic representation
-    from a sentence, using an averaged value of
-    the `layer`-th layer
-    returns a 1-dimensional tensor of size 758
-    """
-    batch_features = []
-    for sentence in batch_sentences:
-        tokens = roberta_model.encode(sentence)
-        all_layers = roberta_model.extract_features(tokens, return_all_hiddens=True)
-        pooling = torch.nn.AvgPool2d((len(tokens), 1))
-        sentence_features = pooling(all_layers[layer])
-        batch_features.append(sentence_features[0])
-    return batch_features
+def get_features_from_sentences(sentences):
+    embeddings = model.encode(sentences, convert_to_numpy=False)
+    # the unsqueeze below is needed because
+    # the top level assumes torch vectors of dimensions n_feat, 1
+    # here n_feat denotes the number of elements for a sentence
+    # embedding for a chosen model
+    embeddings = [torch.unsqueeze(vec, 0) for vec in embeddings]
+    return embeddings
 
 
 def depth_score_to_topic_change_indexes(
         depth_score_timeseries,
-        topic_segmentation_configs=TopicSegmentationConfig,
+        topic_segmentation_config,
 ):
-
-    #TOPIC_CHANGE_THRESHOLD * max(
-        #depth_score_timeseries
-    #)
+    threshold = topic_segmentation_config.TOPIC_CHANGE_THRESHOLD * max(depth_score_timeseries)
 
     if not depth_score_timeseries:
         return []
 
     local_maxima_indices, local_maxima = get_local_maxima(depth_score_timeseries)
-    np.savetxt('local_maxima_indices.csv', local_maxima_indices, delimiter=',')
-    np.savetxt('local_maxima.csv', local_maxima, delimiter=',')
-    if local_maxima == []:
+
+    if not local_maxima:
         return []
 
+    local_maxima_np = np.array(local_maxima)
+    local_maxima_indices_np = np.array(local_maxima_indices)
+    filt_indices = np.nonzero(local_maxima_np > threshold)
+    filt_indices_orig = local_maxima_indices_np[filt_indices]
+    filt_vals = local_maxima_np[filt_indices]
+    # adjust indices to reflect original sentence indices
+    filt_indices = filt_indices_orig \
+                   + topic_segmentation_config.SENTENCE_COMPARISON_WINDOW \
+                   + topic_segmentation_config.SMOOTHING_WINDOW
+
+    return filt_indices
 
 
-    threshold = np.mean(local_maxima)
-    filtered_local_maxima_indices = []
-    filtered_local_maxima = []
-
-    for i, m in enumerate(local_maxima):
-        if m > threshold:
-            filtered_local_maxima.append(m)
-            filtered_local_maxima_indices.append(i)
-
-    local_maxima = filtered_local_maxima
-    local_maxima_indices = filtered_local_maxima_indices
-
-    return local_maxima_indices
-
-
-def flatten_features(batches_features):
-    res = []
-    for batch_features in batches_features:
-        res += batch_features
-    return res
-
-
-def split_list(a, n):
-    k, m = divmod(len(a), n)
-    return (
-        a[i * k + min(i, m): (i + 1) * k + min(i + 1, m)]
-        for i in range(min(len(a), n))
-    )
-
-
-def topic_segmentation(
-        topic_segmentation_algorithm: TopicSegmentationAlgorithm,
-        sentences,
-        topic_segmentation_config):
-    if topic_segmentation_algorithm == TopicSegmentationAlgorithm.BERT:
-        return topic_segmentation_bert(
-            sentences,
-            topic_segmentation_config)
-    elif topic_segmentation_algorithm == TopicSegmentationAlgorithm.EVEN:
-        raise NotImplementedError
-    else:
-        raise NotImplementedError
-
-
-def topic_segmentation_bert(sentences,
-                            topic_segmentation_configs=TopicSegmentationConfig):
-
-    textiling_hyperparameters = TextTilingHyperparameters
-
-    # parallel inference
-    batches_features = []
-    for batch_sentences in split_list(
-            sentences, PARALLEL_INFERENCE_INSTANCES
-    ):
-        batches_features.append(get_features_from_sentence(batch_sentences))
-    timeseries = flatten_features(batches_features)
+def topic_segmentation(sentences, topic_segmentation_config):
+    timeseries = get_features_from_sentences(sentences)
 
     block_comparison_score_timeseries = block_comparison_score(
-        timeseries, k=SENTENCE_COMPARISON_WINDOW
+        timeseries, k=topic_segmentation_config.SENTENCE_COMPARISON_WINDOW
     )
 
     block_comparison_score_timeseries = smooth(
         block_comparison_score_timeseries,
-        n=SMOOTHING_PASSES,
-        s=SMOOTHING_WINDOW,
+        n=topic_segmentation_config.SMOOTHING_PASSES,
+        s=topic_segmentation_config.SMOOTHING_WINDOW,
     )
 
     depth_score_timeseries = depth_score(block_comparison_score_timeseries)
-    depth_scores = np.array(depth_score_timeseries)
-    np.savetxt("depth_scores.csv", depth_scores, delimiter=",")
-    segments = depth_score_to_topic_change_indexes(
-        depth_score_timeseries,
-        topic_segmentation_configs=topic_segmentation_configs)
 
-    return segments
+    segment_indices = depth_score_to_topic_change_indexes(
+        depth_score_timeseries,
+        topic_segmentation_config)
+    segments_np = np.zeros(len(sentences))
+    np.put(segments_np, segment_indices, 1)
+    segments_np = segments_np.astype(int)
+    return segments_np.tolist()
