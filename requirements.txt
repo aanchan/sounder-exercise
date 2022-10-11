@@ -1,3 +1,9 @@
 flask
 pytest
 nltk
+torch
+transformers
+regex
+requests
+hydra-core
+omegaconf

@@ -1,7 +1,7 @@
 import pytest
 import json
 from analysis.transcription import Transcription
-
+from analysis.texttiling import topic_segmentation_bert
 
 @pytest.fixture
 def input_data():
@@ -28,3 +28,8 @@ def test_collect_segments(trans):
     n_ones = seg_list.count(1)
     n_segments = len(collected_segments)
     assert n_ones + 1 == n_segments
+
+
+def test_topic_segmentation_bert(trans):
+    segmentation=topic_segmentation_bert(trans.tokenized_sent)
+    assert segmentation is not None
