@@ -1,7 +1,8 @@
 import pytest
 import json
 from analysis.transcription import Transcription
-
+from analysis.texttiling import topic_segmentation
+from analysis.config import TopicSegmentationConfig
 
 @pytest.fixture
 def input_data():
@@ -28,3 +29,10 @@ def test_collect_segments(trans):
     n_ones = seg_list.count(1)
     n_segments = len(collected_segments)
     assert n_ones + 1 == n_segments
+
+
+def test_topic_segmentation_bert(trans):
+    topic_segmentation_config = TopicSegmentationConfig()
+    segmentation = topic_segmentation(trans.tokenized_sent, topic_segmentation_config)
+    assert isinstance(segmentation, list)
+    assert len(segmentation) == len(trans.tokenized_sent)

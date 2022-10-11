@@ -8,6 +8,8 @@ def process(active_task: Task):
     fake_db[active_task.task_id] = active_task.data
     transcription = Transcription(active_task.data)
     topic_change_list = transcription.segment()
+    collected_segments = transcription.collect_segments(topic_change_list)
+
     print(f'Key:{active_task.task_id}')
     print(f'fake_db_entry:{fake_db[active_task.task_id]}')
     sleep(2)
