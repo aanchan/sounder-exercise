@@ -4,7 +4,7 @@ from sentence_transformers import SentenceTransformer
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-
+# Note the original source for this is https://github.com/gdamaskinos/unsupervised_topic_segmentation/blob/main/core.py
 def depth_score(timeseries):
     """
     The depth score corresponds to how strongly the cues for a subtopic changed on both sides of a
