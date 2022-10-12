@@ -24,7 +24,7 @@ This project implements two endpoints namely
 
 ### Algorithmic details
 - The project aims to analyze the input transcription to extract
-  sections of the podcast with topic changes. For this an algorith
+  sections of the podcast with topic changes. For this an algorithm
   presented in the paper [Unsupervised Topic Segmentation of Meetings with BERT embeddings](https://arxiv.org/abs/2106.12978) 
   from Facebook. This method is heavily inspired by TextTiling. The for the paper is available [here](https://github.com/gdamaskinos/unsupervised_topic_segmentation)
 - Modifications were made to this code to :
