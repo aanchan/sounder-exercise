@@ -1,6 +1,3 @@
-from .constants import TopicSegmentationAlgorithm
-
-
 class TopicSegmentationConfig:
     def __init__(self):
         self.SENTENCE_COMPARISON_WINDOW = 15

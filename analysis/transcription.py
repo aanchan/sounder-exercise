@@ -1,8 +1,7 @@
 from nltk.tokenize import sent_tokenize
-from .segmentation import even_segmentation
 from .texttiling import topic_segmentation
-from .constants import TopicSegmentationAlgorithm
-from .config import TopicSegmentationConfig
+from .topic_config import TopicSegmentationConfig
+
 
 def get_transcription_from_json(transcription_data):
     return transcription_data['results']['transcripts'][0]['transcript']
